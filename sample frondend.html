@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        .sidebar {
+            width: 240px;
+            position: fixed;
+            height: 100%;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding-top: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar h1 {
+            margin: 0;
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid #34495e;
+        }
+
+        .sidebar div {
+            padding: 15px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 1.1em;
+            border-bottom: 1px solid #34495e;
+        }
+
+        .sidebar div:hover {
+            background-color: #34495e;
+            border-radius: 4px;
+        }
+
+        .sidebar div.active {
+            background-color: #16a085;
+            border-radius: 4px;
+        }
+
+        .content {
+            margin-left: 240px;
+            padding: 20px;
+            background-color: #ffffff;
+            min-height: 100vh;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: auto;
+        }
+
+        .heading {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .task {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: box-shadow 0.3s, transform 0.3s;
+        }
+
+        .task:hover {
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .task-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .task-details {
+            margin-bottom: 8px;
+        }
+
+        .status {
+            font-weight: bold;
+        }
+
+        .status-pending {
+            color: #f39c12;
+        }
+
+        .status-in-progress {
+            color: #3498db;
+        }
+
+        .status-completed {
+            color: #2ecc71;
+        }
+
+        .popup {
+            display: none;
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #ffffff;
+            border: 1px solid #2c3e50;
+            padding: 30px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            width: 500px;
+            border-radius: 8px;
+        }
+
+        .popup h2 {
+            margin: 0 0 15px;
+            color: #2c3e50;
+        }
+
+        .popup input[type="text"], .popup input[type="date"], .popup select, .popup textarea {
+            width: 100%;
+            border: 1px solid #2c3e50;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .popup input[type="text"]:focus, .popup input[type="date"]:focus, .popup select:focus, .popup textarea:focus {
+            border-color: #16a085;
+        }
+
+        .popup button {
+            background-color: #16a085;
+            color: #ffffff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-right: 10px;
+        }
+
+        .popup button:hover {
+            background-color: #1abc9c;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+            z-index: 999;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+            .content {
+                margin-left: 200px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .sidebar {
+                width: 150px;
+            }
+            .content {
+                margin-left: 150px;
+            }
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            font-size: 1.5em;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h1><img src="avatar.png" style="width: 30px; height: 30px;"> SWETHA</h1>
+        <div id="homeTab" class="active" onclick="showHome()">Home</div>
+        <div onclick="showPopup()">Add Task</div>
+        <div id="trashTab" onclick="showTrash()">Trash</div>
+    </div>
+    
+    <div class="content" id="contentContainer">
+        <div class="heading">
+            <h1>TO DO LIST</h1>
+        </div>
+        <div id="homeContent">
+            <h2>Tasks</h2>
+            <div id="taskContainer"></div>
+        </div>
+        <div id="trashContent" style="display: none;">
+            <h2>Trash</h2>
+            <div id="trashContainer"></div>
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+    <div class="popup" id="popup">
+        <span class="close-btn" onclick="closePopup()">&times;</span>
+        <h2 id="popupTitle">Add Task</h2>
+        <form id="taskForm">
+            <label for="taskName">Task Name:</label>
+            <input type="text" id="taskName" name="taskName" required>
+            <label for="taskDescription">Description:</label>
+            <textarea id="taskDescription" name="taskDescription"></textarea>
+            <label for="dueDate">Due Date:</label>
+            <input type="date" id="dueDate" name="dueDate" required>
+            <label for="status">Status:</label>
+            <select id="status" name="status">
+                <option value="pending">Pending</option>
+                <option value="in-progress">In Progress</option>
+                <option value="completed">Completed</option>
+            </select>
+            <label for="createdAt">Created At:</label>
+            <input type="text" id="createdAt" name="createdAt" readonly>
+            <div style="text-align: right; margin-top: 20px;">
+                <button type="submit" id="submitButton">Add</button>
+            </div>
+        </form>
+    </div>
+</body>
+<script>
+    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+    let trash = JSON.parse(localStorage.getItem('trash')) || [];
+    let currentTaskIndex = null;
+
+    function saveToLocalStorage() {
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+        localStorage.setItem('trash', JSON.stringify(trash));
+    }
+
+    function showPopup(taskIndex = null) {
+        document.getElementById('overlay').style.display = 'block';
+        document.getElementById('popup').style.display = 'block';
+
+        if (taskIndex === null) {
+            currentTaskIndex = null;
+            document.getElementById('popupTitle').innerText = 'Add Task';
+            document.getElementById('taskName').value = '';
+            document.getElementById('taskDescription').value = '';
+            document.getElementById('dueDate').value = '';
+            document.getElementById('status').value = 'pending';
+            document.getElementById('createdAt').value = new Date().toLocaleString('en-US', {
+                weekday : 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            document.getElementById('submitButton').innerText = 'Add';
+        } else {
+            currentTaskIndex = taskIndex;
+            const task = tasks[taskIndex];
+            document.getElementById('popupTitle').innerText = 'Edit Task';
+            document.getElementById('taskName').value = task.name;
+            document.getElementById('taskDescription').value = task.description;
+            document.getElementById('dueDate').value = task.dueDate;
+            document.getElementById('status').value = task.status;
+            document.getElementById('createdAt').value = task.createdAt;
+            document.getElementById('submitButton').innerText = 'Update';
+        }
+    }
+
+    function closePopup() {
+        document.getElementById('overlay').style.display = 'none';
+        document.getElementById('popup').style.display = 'none';
+    }
+
+    document.getElementById('taskForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const taskName = document.getElementById('taskName').value;
+        const taskDescription = document.getElementById('taskDescription').value;
+        const dueDate = document.getElementById('dueDate').value;
+        const status = document.getElementById('status').value;
+        const createdAt = document.getElementById('createdAt').value;
+
+        if (currentTaskIndex === null) {
+            const newTask = {
+                name: taskName,
+                description: taskDescription,
+                dueDate: dueDate,
+                status: status,
+                createdAt: createdAt
+            };
+            tasks.push(newTask);
+        } else {
+            tasks[currentTaskIndex] = {
+                name: taskName,
+                description: taskDescription,
+                dueDate: dueDate,
+                status: status,
+                createdAt: createdAt
+            };
+        }
+
+        saveToLocalStorage();
+        displayTasks();
+        closePopup();
+    });
+
+    function displayTasks() {
+        const taskContainer = document.getElementById('taskContainer');
+        taskContainer.innerHTML = '';
+        if (tasks.length === 0) {
+            taskContainer.innerHTML = '<p>No tasks available.</p>';
+        } else {
+            tasks.forEach((task, index) => {
+                const taskElement = document.createElement('div');
+                taskElement.className = 'task';
+                taskElement.innerHTML = `
+                    <div class="task-title">${task.name}</div>
+                    <div class="task-details">${task.description}</div>
+                    <div>Due Date: ${task.dueDate}</div>
+                    <div>Status: <span class="status status-${task.status.replace(' ', '-')}">${task.status}</span></div>
+                    <div>Created At: ${task.createdAt}</div>
+                    <button onclick="editTask(${index})">Edit</button>
+                    <button onclick="deleteTask(${index})">Delete</button>
+                `;
+                taskContainer.insertBefore(taskElement, taskContainer.firstChild);
+            });
+        }
+    }
+
+
+
+    function deleteTask(index) {
+        const task = tasks.splice(index, 1)[0];
+        trash.unshift(task);
+        saveToLocalStorage();
+        displayTasks();
+        displayTrash();
+    }
+
+    function displayTrash() {
+        const trashContainer = document.getElementById('trashContainer');
+        trashContainer.innerHTML = '';
+        if (trash.length === 0) {
+            trashContainer.innerHTML = '<p>No tasks in the trash.</p>';
+        } else {
+            trash.forEach((task, index) => {
+                const taskElement = document.createElement('div');
+                taskElement.className = 'task';
+                taskElement.innerHTML = `
+                    <div class="task-title">${task.name}</div>
+                    <div>${task.description}</div>
+                    <div>Due Date: ${task.dueDate}</div>
+                    <div>Status: <span class="status status-${task.status.replace(' ', '-')}">${task.status}</span></div>
+                    <div>Created At: ${task.createdAt}</div>
+                `;
+                trashContainer.appendChild(taskElement);
+            });
+        }
+    }
+
+    function showHome() {
+        document.getElementById('homeTab').classList.add('active');
+        document.getElementById('trashTab').classList.remove('active');
+        document.getElementById('homeContent').style.display = 'block';
+        document.getElementById('trashContent').style.display = 'none';
+    }
+
+    function showTrash() {
+        document.getElementById('trashTab').classList.add('active');
+        document.getElementById('homeTab').classList.remove('active');
+        document.getElementById('homeContent').style.display = 'none';
+        document.getElementById('trashContent').style.display = 'block';
+    }
+
+    function editTask(index) {
+        showPopup(index);
+    }
+
+    displayTasks();
+    displayTrash();
+</script>
+</html>
